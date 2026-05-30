@@ -42,9 +42,7 @@ Item {
         property var pending: ({})
 
         function run(tag, cmd) {
-            var arr = connectedSources
-            arr.push("echo BOOKOS_TAG=" + tag + "; " + cmd)
-            connectedSources = arr
+            connectSource("echo BOOKOS_TAG=" + tag + "; " + cmd)
         }
 
         onNewData: function(source, data) {

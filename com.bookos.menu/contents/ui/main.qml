@@ -39,13 +39,14 @@ PlasmoidItem {
         id: runner
         engine: "executable"
         connectedSources: []
-        onNewData: function(s, d) { disconnectSource(s) }
+        onNewData: function(source, data) {
+            // command finished — release the source so it can run again later
+            disconnectSource(source)
+        }
         function exec(cmd) {
-            // tag with timestamp so repeated identical actions still fire
-            var src = cmd + " #" + Date.now()
-            var arr = connectedSources
-            arr.push(src)
-            connectedSources = arr
+            // tag with timestamp so repeated identical actions still re-trigger
+            // (connectSource on an already-connected identical string is a no-op)
+            connectSource(cmd + " # " + Date.now())
         }
     }
 
@@ -70,17 +71,20 @@ PlasmoidItem {
 
     // ── Action dispatch ─────────────────────────────────────────────
     function doAction(id) {
-        menu.expanded = false
         switch (id) {
             case "about":    showAbout(); break
             case "prefs":    runner.exec("bookos-settings"); break
             case "store":    runner.exec("bookos-store"); break
-            case "sleep":    runner.exec("qdbus6 org.freedesktop.PowerManagement /org/freedesktop/PowerManagement Suspend || systemctl suspend"); break
-            case "restart":  runner.exec("qdbus6 org.kde.LogoutPrompt /LogoutPrompt promptReboot || systemctl reboot"); break
-            case "shutdown": runner.exec("qdbus6 org.kde.LogoutPrompt /LogoutPrompt promptShutDown || systemctl poweroff"); break
-            case "lock":     runner.exec("qdbus6 org.freedesktop.ScreenSaver /ScreenSaver Lock || loginctl lock-session"); break
-            case "logout":   runner.exec("qdbus6 org.kde.LogoutPrompt /LogoutPrompt promptLogout"); break
+            // Power actions: prefer KDE's logout/suspend; the qdbus path can be
+            // either qdbus6 or qdbus, so try both, then fall back to systemctl.
+            case "sleep":    runner.exec("qdbus6 org.freedesktop.PowerManagement /org/freedesktop/PowerManagement Suspend 2>/dev/null || qdbus org.freedesktop.PowerManagement /org/freedesktop/PowerManagement Suspend 2>/dev/null || systemctl suspend"); break
+            case "restart":  runner.exec("qdbus6 org.kde.LogoutPrompt /LogoutPrompt promptReboot 2>/dev/null || qdbus org.kde.LogoutPrompt /LogoutPrompt promptReboot 2>/dev/null || systemctl reboot"); break
+            case "shutdown": runner.exec("qdbus6 org.kde.LogoutPrompt /LogoutPrompt promptShutDown 2>/dev/null || qdbus org.kde.LogoutPrompt /LogoutPrompt promptShutDown 2>/dev/null || systemctl poweroff"); break
+            case "lock":     runner.exec("qdbus6 org.freedesktop.ScreenSaver /ScreenSaver Lock 2>/dev/null || qdbus org.freedesktop.ScreenSaver /ScreenSaver Lock 2>/dev/null || loginctl lock-session"); break
+            case "logout":   runner.exec("qdbus6 org.kde.LogoutPrompt /LogoutPrompt promptLogout 2>/dev/null || qdbus org.kde.LogoutPrompt /LogoutPrompt promptLogout"); break
         }
+        // close after dispatch so the running command isn't torn down early
+        Qt.callLater(function() { menu.expanded = false })
     }
 
     // ── Compact (panel) representation: the logo button ─────────────
