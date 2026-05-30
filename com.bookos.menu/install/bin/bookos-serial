@@ -1,0 +1,11 @@
+#!/bin/sh
+# Prints the machine serial number (root-only DMI). Invoked via pkexec by the
+# BookOS Menu plasmoid. No caching — reads live so it works on any install/VM.
+for f in product_serial board_serial chassis_serial; do
+    v=$(cat "/sys/devices/virtual/dmi/id/$f" 2>/dev/null)
+    case "$v" in
+        ""|[Nn]one|[Dd]efault*|"To Be Filled"*|"System Serial Number") ;;
+        *) printf '%s\n' "$v"; exit 0 ;;
+    esac
+done
+printf '%s\n' "—"
