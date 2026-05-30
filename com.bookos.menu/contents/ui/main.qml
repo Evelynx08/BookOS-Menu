@@ -126,7 +126,7 @@ PlasmoidItem {
             anchors { left: parent.left; right: parent.right; top: parent.top }
             spacing: 0
 
-            Item { Layout.preferredHeight: 4 }
+            Item { Layout.preferredHeight: 2 }
 
             MenuRow { label: I18n.tr(locale,"about");  onTriggered: doAction("about") }
 
