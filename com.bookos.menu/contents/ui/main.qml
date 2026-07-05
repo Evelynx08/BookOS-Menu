@@ -117,13 +117,9 @@ PlasmoidItem {
         Layout.minimumHeight: col.implicitHeight
         Layout.maximumHeight: col.implicitHeight
 
-        Rectangle {
-            anchors.fill: parent
-            color: popBg
-            radius: 12
-            border.color: divCol
-            border.width: 1
-        }
+        // No custom background rectangle: we use Plasma's native popup frame
+        // (themed rounding + shadow). A second rounded rect inside it produced
+        // the "double border" artifact, so it's intentionally omitted.
 
         ColumnLayout {
             id: col
